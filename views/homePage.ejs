@@ -1,0 +1,436 @@
+<head>
+    <title>E-commerce website</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+    
+    <!-- For profile icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
+
+    <!-- For Data tables -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
+    <script type="text/javascript" charset="utf-8" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#myTable').DataTable();
+        });
+    </script>
+
+    <!-- Code to update and delete products, update user, cancel order, fetchCartInfo -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        var to_be_updated;
+        $(document).ready(function () {
+            $('.update').on('click', function() {
+                productId = $(this).attr('id');
+                $.ajax({
+                    url: '/product/productById',
+                    method: 'POST',
+                    data: { "id": productId },
+                    success: function(response) {
+                        to_be_updated = response.productId;
+                        $('#updateProductId').attr("value", response.productId);
+                        $('#updateProductName').attr("value", response.productName);
+                        $('#updateDescription').attr("value", response.description);
+                        $('#updatePrice').attr("value", response.price);
+                        $('#updateCategory').attr("value", response.category);
+                        $('#updateImage').attr("value", response.productImage);
+                        $('#Modal').modal({ show: true });
+                    },
+                    error: function(error)  {
+                        alert("No data for productId: "+ productId);
+                    }
+                });
+            });
+
+            $('#update_product').on('click', function (e) {                
+                e.preventDefault();
+                var formData = $('#updateProductForm').serialize();
+                console.log('Form data: ', JSON.stringify(formData));
+                $.ajax({
+                    url: '/product/updateProduct',
+                    method: 'PUT',
+                    data: formData,
+                    success: function(response) {
+                        console.log("Product updated successfully");
+                        setTimeout(function () {
+                            window.location.reload()
+                        }, 500);
+                    },
+                    error: function () {
+                        alert('Not able to update product');
+                    }
+                });
+            });
+
+            $('.delete').on('click', function (e) {
+                e.preventDefault();
+                const productId = $(this).attr('id');                
+                console.log("Delete clicked on: ", productId);
+                var response = confirm("Do you want to delete product: "+ productId);
+                if(response) {
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/product/deleteProduct',
+                        method: 'delete',
+                        data: { "productId": productId },
+                        success: function(response) {
+                            console.log("Response: ", response);
+                            setTimeout(function () {
+                                window.location.reload()
+                            }, 300);
+                        },
+                        error: function(response) {
+                            alert("No data found");
+                        }
+                    });
+                }
+            });
+
+            $('#update_user').on('click', function (e) { 
+                e.preventDefault();
+                var formData = $('#updateUserForm').serialize();
+                console.log('Form data: ', JSON.stringify(formData));
+                $.ajax({
+                    url: '/user/updateUser',
+                    method: 'PUT',
+                    data: formData,
+                    success: function(response) {
+                        console.log("User updated successfully");
+                        setTimeout(function () {
+                            window.location.reload()
+                        }, 500);
+                    },
+                    error: function () {
+                        alert('Not able to update user');
+                    }
+                });
+            });
+
+            $('.cancelOrder').on('click', function (e) { 
+                e.preventDefault();
+                const orderId = $(this).attr('id');
+                const response = confirm('Do you want to cancel order: '+orderId);
+                if(response) {
+                    $.ajax({
+                        url: '/orders/cancelOrder',
+                        method: 'PUT',
+                        data: { "orderId": orderId },
+                        success: function(response) {
+                            console.log("Order cancelled");
+                            setTimeout(function () {
+                                window.location.reload()
+                            }, 500);
+                        },
+                        error: function () {
+                            alert('Not able to cancel order');
+                        }
+                    });
+                }
+            });
+
+            $('.fetchCartButton').on('click', function (e) {
+                e.preventDefault();
+                const cartId = $(this).attr('id');
+                // alert("CartId: "+cartId);
+                $.ajax({
+                    url: '/cart/getCartById',
+                    method: 'POST',
+                    data: { "cartId": cartId },
+                    success: function(response) {
+                        const cartId = response.cartId;
+                        const items = response.items;
+                        const price = response.price;
+                        let itemsText = '';
+                        for(let i=0; i<items.length; i++) {
+                            itemsText += `${items[i].itemName} -> Quantity - ${items[i].quantity}<br />`;
+                        }
+                        // const str = `${cartId}\n${itemsText}${price}`;
+                        // alert("Cart:"+str);
+                        $('#cartModalHeader').html('<b>CartId: </b>'+cartId);
+                        $('#cartModalBody').html(itemsText);
+                        $('#cartModalPrice').html('<br /><b>Price: </b>'+price);
+                        $('#Modal').modal({ show: true });
+                    },
+                    error: function () {
+                        alert('Not able to fetch cart');
+                    }
+                });
+            });
+        })
+    </script>
+
+    <style>
+        .border-radius {
+            border-radius: 1rem;
+        }
+    </style>
+</head>
+
+<body class="bg-info">
+    <section>
+        <div class="container h-100">
+            <div class="row py-3 h-100">
+                <div class="col-12">
+                    <div class="card border-radius bg-secondary">
+                        <div class="card-body py-2 px-5 text-center">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <% if(user.userType == 'Admin' || user.userType == 'Seller') {%>
+                                    <button type="button" class="btn btn-primary mr-4" data-toggle="modal" data-target="#addProduct">
+                                        Add Product
+                                    </button>
+                                    <% } %>
+                                    
+                                    <% if(user.userType == 'Admin') { %>
+                                    <a href="/viewUserInfo" class="btn btn-primary mr-4">View Users</a>
+                                    <% } %>
+
+                                    <% if(user.userType == 'Seller') { %>
+                                        <a href="/handleOrders" class="btn btn-primary mr-4">Handle orders</a>
+                                    <% } %>
+
+                                    <a href="/goToPurchaseFlow" class="btn btn-primary mr-4">Go to purchase flow</a>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-secondary dropdown-toggle" type="button" id="handleUser" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="bi bi-person mr-2"></i><%= user.username %>
+                                    </button>
+                                    <div class="dropdown-menu" aria-labelledby="handleUser">
+                                      <button type="button" class="dropdown-item" data-toggle="modal" data-target="#updateUser">Update profile</button>
+                                      <a class="dropdown-item" href="/user/deleteUser">Delete account</a>
+                                      <a class="dropdown-item" href="/user/logout">Logout</a>
+                                    </div>
+                                  </div>
+                            </div>                            
+                        <div>
+                    </div>
+                </div>
+            </div>    
+
+            <center>
+                <div class="p-3 bg-dark mt-4" style="display: inline-block;">
+                    <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#viewOrders">
+                        View Orders
+                    </button>
+                </div>
+            </center>
+
+            <div class="row py-2 collapse" id="viewOrders">
+                <div class="col-12">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-stripped" id="myTable">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>OrderId</th>
+                                    <th>CartId</th>
+                                    <th>Address</th>
+                                    <th>Status</th>
+                                    <th>Handled by</th>
+                                    <th>Cancel Order</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% for(let i = 0; i < orders.length; i++) { %>
+                                    <tr>
+                                        <td><%=orders[i].orderId %></td>
+                                        <td>
+                                            <button class="fetchCartButton btn btn-link p-1 bg-light" id="<%=orders[i].cartId%>" data-toggle="modal" data-target="#showCart">
+                                                <%=orders[i].cartId%>
+                                            </button>
+                                        </td>
+                                        <td><%=orders[i].address %></td>
+                                        <td><%=orders[i].status %></td>
+                                        <td><%=orders[i].seller %></td>
+                                        <% if(orders[i].status != 'Order Delivered' && orders[i].status != 'Order Cancelled') { %>
+                                        <td>
+                                            <button type="button" class="cancelOrder btn btn-danger" id="<%=orders[i].orderId%>">
+                                                Cancel order
+                                            </button>
+                                        </td>
+                                        <% } %>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row py-2" id="viewProducts">
+                <div class="col-12">
+                    <center><h3>Products</h3></center>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-stripped" id="myTable">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>ProductId</th>
+                                    <th>Product Image</th>
+                                    <th>Product name</th>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <% if(user.userType == 'Admin' || user.userType == 'Seller') { %>
+                                        <th>Update product</th>
+                                        <th>Delete product</th>
+                                    <% } %>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% for(let i = 0; i < products.length; i++) { %>
+                                    <tr>
+                                        <td><%=products[i].productId %></td>
+                                        <td>
+                                            <img src="<%= products[i].productImage%>" alt="<%=products[i].productName%>" class="img-fluid">
+                                        </td>
+                                        <td><%=products[i].productName%></td>
+                                        <td><%=products[i].description %></td>
+                                        <td><%=products[i].category %></td>
+                                        <td><%=products[i].price %></td>
+                                        <% if(user.userType == 'Admin' || user.userType == 'Seller') { %>
+                                        <td>
+                                            <button type="button" class="update btn btn-warning" data-toggle="modal" data-target="#updateProduct" id="<%=products[i].productId%>">
+                                                Edit
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="delete btn btn-danger" id="<%=products[i].productId%>" value="<%=products[i].productId%>">
+                                                Delete
+                                            </button>
+                                        </td>
+                                        <% } %>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="updateProduct" tabindex="-1" role="dialog" aria-labelledby="updateProduct" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2 class="modal-title">Update Product</h2>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="updateProductForm" class="px-5">
+                                    <div data-mdb-input-init class="form-outline form-white mb-4">
+                                        <input type="text" id="updateProductId" class="form-control form-control-lg" name="productId" placeholder="Product Id" />
+                                    </div>
+                                    <div data-mdb-input-init class="form-outline form-white mb-4">
+                                        <input type="text" id="updateProductName" class="form-control form-control-lg" name="productName" placeholder="Product Name" />
+                                    </div>
+                                    <div data-mdb-input-init class="form-outline form-white mb-4">
+                                        <input type="text" id="updateDescription" class="form-control form-control-lg" name="description" placeholder="Product Description" />
+                                    </div>
+                                    <div data-mdb-input-init class="form-outline form-white mb-4">
+                                        <input type="number" id="updatePrice" class="form-control form-control-lg" name="price" placeholder="Product price" />
+                                    </div>
+                                    <div data-mdb-input-init class="form-outline form-white mb-4">
+                                        <input type="text" id="updateCategory" class="form-control form-control-lg" name="category" placeholder="Product category" />
+                                    </div>
+                                    <div data-mdb-input-init class="form-outline form-white mb-4">
+                                        <input type="text" id="updateImage" class="form-control form-control-lg" name="productImage" placeholder="Product Image" />
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                                <button type="submit" id="update_product" class="btn btn-primary">Update</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    
+                <div class="modal fade" id="addProduct" tabindex="-1" role="dialog" aria-labelledby="addProduct" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2 class="modal-title">Add Product</h2>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="addProduct" method="POST" action="/product/addProduct" class="px-5">
+                                    <div data-mdb-input-init class="form-outline form-white mb-4">
+                                        <input type="text" id="productName" class="form-control form-control-lg" name="productName" placeholder="Product Name" />
+                                    </div>
+                                    <div data-mdb-input-init class="form-outline form-white mb-4">
+                                        <input type="text" id="description" class="form-control form-control-lg" name="description" placeholder="Product Description" />
+                                    </div>
+                                    <div data-mdb-input-init class="form-outline form-white mb-4">
+                                        <input type="number" id="price" class="form-control form-control-lg" name="price" placeholder="Product price" />
+                                    </div>
+                                    <div data-mdb-input-init class="form-outline form-white mb-4">
+                                        <input type="text" id="category" class="form-control form-control-lg" name="category" placeholder="Product category" />
+                                    </div>
+                                    <div data-mdb-input-init class="form-outline form-white mb-4">
+                                        <input type="text" id="image" class="form-control form-control-lg" name="productImage" placeholder="Product Image" />
+                                    </div>
+                                    <button data-mdb-button-init data-mdb-ripple-init class="btn btn-primary btn-lg mt-4 px-5" type="submit">
+                                        Add Product
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="updateUser" tabindex="-1" role="dialog" aria-labelledby="updateUser" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 class="modal-title">Update User profile</h2>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="updateUserForm" class="px-5">
+                                <div data-mdb-input-init class="form-outline form-white mb-4">
+                                    <input type="text" id="updateUserName" class="form-control form-control-lg" name="username" placeholder="Username" value="<%= user.username %>" />
+                                </div>
+                                <div data-mdb-input-init class="form-outline form-white mb-4">
+                                    <input type="text" id="updateEmail" class="form-control form-control-lg" name="email" placeholder="Email" value="<%= user.email %>" disabled />
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                            <button type="submit" id="update_user" class="btn btn-primary">Update</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="showCart" tabindex="-1" role="dialog" aria-labelledby="showCart" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 class="modal-title" id="cartModalHeader"></h2>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="cartModalBody"></div>
+                            <div id="cartModalPrice"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>

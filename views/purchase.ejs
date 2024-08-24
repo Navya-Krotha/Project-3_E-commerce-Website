@@ -1,0 +1,285 @@
+<head>
+    <title>E-commerce website</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+    
+    <!-- For profile icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
+
+    <!-- For Data tables -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
+    <script type="text/javascript" charset="utf-8" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#myTable').DataTable();
+        });
+    </script>
+
+    <!-- Code to update and delete cartItems, items place order -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        var to_be_updated;
+        var cartId = "<%= cart.cartId %>";
+        var itemId;
+        $(document).ready(function () {
+            $('.update').on('click', function() {
+                itemId = $(this).attr('id');
+                console.log("Cart, item: ", cartId, itemId);
+                $.ajax({
+                    url: '/cart/getCartItemById',
+                    method: 'POST',
+                    data: { "cartId": cartId, "itemId": itemId },
+                    success: function(response) {
+                        to_be_updated = response.itemId;
+                        $('#updateItemName').attr("value", response.itemName);
+                        $('#updateQuantity').attr("value", response.quantity);
+                        $('#Modal').modal({ show: true });
+                    },
+                    error: function(error)  {
+                        alert("No data for cartItem: "+ itemId);
+                    }
+                });
+            });
+
+            $('#update_cartItem').on('click', function (e) {                
+                e.preventDefault();
+                var formData = $('#updateCartItemForm').serialize();
+                formData += `&itemId=${itemId}`;
+                // alert('Form data: '+JSON.stringify(formData));
+                $.ajax({
+                    url: '/cart/updateCartItem',
+                    method: 'PUT',
+                    data: formData,
+                    success: function(response) {
+                        console.log("Product updated successfully");
+                        setTimeout(function () {
+                            window.location.reload()
+                        }, 500);
+                    },
+                    error: function () {
+                        alert('Not able to update cartItem');
+                    }
+                });
+            });
+
+            $('.delete').on('click', function (e) {
+                e.preventDefault();
+                const itemId = $(this).attr('id'); 
+                var response = confirm("Do you want to delete item from cart: "+ itemId);
+                if(response) {
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/cart/removeItem',
+                        method: 'delete',
+                        data: { "itemId": itemId },
+                        success: function(response) {
+                            console.log("Response: ", response);
+                            setTimeout(function () {
+                                window.location.reload()
+                            }, 300);
+                        },
+                        error: function(response) {
+                            alert("No data found");
+                        }
+                    });
+                }
+            });
+
+            $('.placeOrder').on('click', function () {
+                const address = $('#address').val();
+                // alert("Address: "+address);
+                $.ajax({
+                    url: '/orders/placeOrder',
+                    method: 'POST',
+                    data: { "address": address },
+                    success: function(response) {
+                        console.log(response);
+                        window.location.href = '/user/viewHomePage';
+                    },
+                    error: function () {
+                        alert('Not able to place order');
+                    }
+                });
+            });
+
+            $('.emptyCart').on('click', function () {
+                const response = confirm('Do you want to empty cart');
+                if(response) {
+                    $.ajax({
+                    url: '/cart/removeCart',
+                    method: 'DELETE',
+                    success: function(response) {
+                        console.log(response);
+                        window.location.reload();
+                    },
+                    error: function () {
+                        alert('Not able to empty cart');
+                    }
+                });
+                }
+            });
+        })
+    </script>
+
+    <style>
+        .border-radius {
+            border-radius: 1rem;
+        }
+    </style>
+</head>
+
+<body class="bg-info">
+    <section>
+        <div class="container h-100">
+            <div class="row py-3 h-100">
+                <div class="col-12">
+                    <div class="row py-3">
+                        <div class="col-12">
+                            <div class="card bg-dark border-radius">
+                                <div class="card-body py-4 px-5 text-center">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <a href="/user/viewHomePage" class="btn btn-primary">Go to Home page</a>
+                                    </div>
+                                <div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>   
+            
+            <div class="p-3 bg-dark mt-4" style="display: inline-block;">
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addCartItem">
+                    Add Item to cart
+                </button>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <center>
+                        <h3 class="mt-3 mb-2">Cart Items</h3>
+                    </center>
+                    <% if(cart.cartId) { %>
+                    <h5>CartId: <%= cart.cartId %></h5>
+                    <% } %>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-stripped" id="myTable">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>ItemId</th>
+                                    <th>Item name</th>
+                                    <th>Quantity</th>
+                                    <th>Update CartItem</th>
+                                    <th>Delete CartItem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% for(let i = 0; i < cart.items.length; i++) { %>
+                                    <tr>
+                                        <td><%=cart.items[i].itemId %></td>
+                                        <td><%=cart.items[i].itemName %></td>
+                                        <td><%=cart.items[i].quantity %></td>
+                                        <td>
+                                            <button type="button" class="update btn btn-warning" data-toggle="modal" data-target="#updateCart" id="<%=cart.items[i].itemId%>">
+                                                Edit
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="delete btn btn-danger" id="<%=cart.items[i].itemId%>" value="<%=cart.items[i].itemId%>">
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <% if(cart.price) { %>
+                    <div class="text-right mb-3">
+                        <b>Price: </b><%= cart.price %>
+                    </div>
+                    <% } %>
+
+                    <% if(cart.items.length) { %>
+                    <div data-mdb-input-init class="form-outline form-white mb-4">
+                        <input type="text" id="address" class="form-control form-control-lg" name="address" placeholder="Address" />
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <div class="p-3 bg-dark mt-4">
+                            <button class="placeOrder btn btn-primary">Place Order</button>
+                        </div>
+                        <div class="p-3 bg-dark mt-4">
+                            <button class="emptyCart btn btn-primary">Empty cart</button>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+            </div>    
+            
+            <div class="modal fade" id="addCartItem" tabindex="-1" role="dialog" aria-labelledby="addCartItem" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 class="modal-title">Add Item to cart</h2>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="addCartItemForm" method="POST" action="/cart/addItemToCart" class="px-5">
+                                <div data-mdb-input-init class="form-outline form-white mb-4">
+                                    <select class="form-select w-100" aria-label="Default select example" name="productId" style="height:44px;">
+                                        <option selected>Select product</option>
+                                        <% for(let i=0; i< products.length; i++) { %>
+                                            <option value="<%= products[i].productId %>"><%= products[i].productName %></option> 
+                                        <% } %>
+                                    </select>
+                                </div>
+                                <div data-mdb-input-init class="form-outline form-white mb-4">
+                                    <input type="number" id="quantity" class="form-control form-control-lg" name="quantity" placeholder="Product quantity" />
+                                </div>
+                                <center>
+                                    <button data-mdb-button-init data-mdb-ripple-init class="btn btn-primary btn-lg mt-3 px-5" type="submit">
+                                        Add Item
+                                    </button>
+                                </center>
+                            </form>
+                        </div>   
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="updateCart" tabindex="-1" role="dialog" aria-labelledby="updateCart" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 class="modal-title">Update cart item</h2>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="updateCartItemForm">
+                                <div data-mdb-input-init class="form-outline form-white mb-4">
+                                    <input type="text" id="updateItemName" class="form-control form-control-lg" name="itemName" placeholder="Item name" disabled />
+                                </div>
+                                <div data-mdb-input-init class="form-outline form-white mb-4">
+                                    <input type="number" id="updateQuantity" class="form-control form-control-lg" name="quantity" placeholder="Product quantity" />
+                                </div>
+                            </form>
+                        </div> 
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                            <button type="submit" id="update_cartItem" class="btn btn-primary">Update</button>
+                        </div>  
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>

@@ -1,0 +1,121 @@
+<head>
+    <title>E-commerce website</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+
+    <!-- For Data tables -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
+    <script type="text/javascript" charset="utf-8" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#myTable').DataTable();
+        });
+    </script>
+
+    <style>
+        th, td {
+            text-align: center;
+        }
+
+        .border-radius {
+            border-radius: 1rem;
+        }
+    </style>
+</head>
+
+<body class="bg-info">
+    <section>
+        <div class="container h-100">
+            <div class="row py-3">
+                <div class="col-12">
+                    <div class="card bg-dark border-radius">
+                        <div class="card-body py-4 px-5 text-center">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="/user/viewHomePage" class="btn btn-primary">Go to Home page</a>
+                            </div>
+                        <div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="addUser" tabindex="-1" role="dialog" aria-labelledby="addUser" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 class="modal-title">Add user</h2>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="addUser" method="POST" action="/user/addUser" class="px-5">
+                                <div data-mdb-input-init class="form-outline form-white mb-4">
+                                    <input type="text" id="username" class="form-control form-control-lg" name="username" placeholder="Username" />
+                                </div>
+                                <div data-mdb-input-init class="form-outline form-white mb-4">
+                                    <input type="email" id="email" class="form-control form-control-lg" name="email" placeholder="Email" />
+                                </div>
+                                <div data-mdb-input-init class="form-outline form-white mb-4">
+                                    <input type="password" id="password" class="form-control form-control-lg" name="password" placeholder="Password" />
+                                </div>
+                                <div data-mdb-input-init class="form-outline form-white mb-4">
+                                    <select class="form-select w-100" aria-label="Default select example" name="userType" style="height:44px;">
+                                        <option selected>Open this select role</option>
+                                        <option value="Admin">Admin</option>
+                                        <option value="Seller">Seller</option>
+                                        <option value="Buyer">Buyer</option>
+                                        </select>
+                                </div>
+                                <center>
+                                    <button data-mdb-button-init data-mdb-ripple-init class="btn btn-primary btn-lg mt-3 px-5" type="submit">
+                                        Add User
+                                    </button>
+                                </center>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row py-3">
+                <div class="col-12">
+                    <center>
+                        <h1 class="mt-2 mb-4">Users List</h1>
+                    </center>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-stripped" id="myTable">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>UserType</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% for(let i = 0; i < users.length; i++) { %>
+                                    <tr>
+                                        <td><%=users[i].username %></td>
+                                        <td><%=users[i].email %></td>
+                                        <td><%=users[i].userType %></td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <center>
+                <div class="p-3 bg-dark" style="display: inline-block;">
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addUser">
+                        Add User
+                    </button>
+                </div>
+            </center>
+        </div>
+    </section>
+</body>

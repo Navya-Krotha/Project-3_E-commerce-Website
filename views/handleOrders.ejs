@@ -1,0 +1,217 @@
+<head>
+    <title>E-commerce website</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+
+    <!-- For Data tables -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
+    <script type="text/javascript" charset="utf-8" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#myTable').DataTable();
+        });
+    </script>
+
+    <!-- Code to update and delete products, update user, cancel order, fetchCartInfo -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        var to_be_updated;
+        var orderId;
+        $(document).ready(function () {
+            $('.updateOrder').on('click', function() {
+                orderId = $(this).attr('id');
+                $.ajax({
+                    url: '/orders/getOrderById',
+                    method: 'POST',
+                    data: { "orderId": orderId },
+                    success: function(response) {
+                        to_be_updated = response.orderId;
+                        $('#updateOrderId').attr("value", response.orderId);
+                        $('#updatedOrderStatus').attr("value", response.status);
+                        $('#Modal').modal({ show: true });
+                    },
+                    error: function(error)  {
+                        alert("No data for productId: "+ productId);
+                    }
+                });
+            });
+
+            $('#update_status').on('click', function (e) {                
+                e.preventDefault();
+                const status = $('#updatedOrderStatus').val();
+                const response = confirm(`Do you want to update order ${orderId} status to ${status}`);
+                if(response) {
+                    $.ajax({
+                        url: '/orders/updateOrderStatus',
+                        method: 'PUT',
+                        data: { "orderId": orderId, "status": status },
+                        success: function(response) {
+                            console.log("Order status updated successfully");
+                            setTimeout(function () {
+                                window.location.reload()
+                            }, 500);
+                        },
+                        error: function () {
+                            alert('Not able to update order status');
+                        }
+                    });
+                }
+            });
+
+            $('.fetchCartButton').on('click', function (e) {
+                e.preventDefault();
+                const cartId = $(this).attr('id');
+                // alert("CartId: "+cartId);
+                $.ajax({
+                    url: '/cart/getCartById',
+                    method: 'POST',
+                    data: { "cartId": cartId },
+                    success: function(response) {
+                        const cartId = response.cartId;
+                        const items = response.items;
+                        const price = response.price;
+                        let itemsText = '';
+                        for(let i=0; i<items.length; i++) {
+                            itemsText += `<b>${items[i].itemId}</b> - ${items[i].itemName} -> Quantity - ${items[i].quantity}<br />`;
+                        }
+                        // const str = `${cartId}\n${itemsText}${price}`;
+                        // alert("Cart:"+str);
+                        $('#cartModalHeader').html('<b>CartId: </b>'+cartId);
+                        $('#cartModalBody').html(itemsText);
+                        $('#cartModalPrice').html('<br /><b>Price: </b>'+price);
+                        $('#Modal').modal({ show: true });
+                    },
+                    error: function () {
+                        alert('Not able to fetch cart');
+                    }
+                });
+            });
+        });
+    </script>
+
+    <style>
+        th, td {
+            text-align: center;
+        }
+
+        .border-radius {
+            border-radius: 1rem;
+        }
+    </style>
+</head>
+
+<body class="bg-info">
+    <section>
+        <div class="container h-100">
+            <div class="row py-3">
+                <div class="col-12">
+                    <div class="card bg-dark border-radius">
+                        <div class="card-body py-4 px-5 text-center">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="/user/viewHomePage" class="btn btn-primary">Go to Home page</a>
+                            </div>
+                        <div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row py-3">
+                <div class="col-12">
+                    <center>
+                        <h1 class="mt-2 mb-4">Handle orders</h1>
+                    </center>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-stripped" id="myTable">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>OrderId</th>
+                                    <th>CartId</th>
+                                    <th>Status</th>
+                                    <th>Status updated by</th>
+                                    <th>Update status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% for(let i = 0; i < orders.length; i++) { %>
+                                    <tr>
+                                        <td><%=orders[i].orderId %></td>
+                                        <td>
+                                            <button class="fetchCartButton btn btn-link p-1 bg-light" id="<%=orders[i].cartId%>" data-toggle="modal" data-target="#showCart">
+                                                <%=orders[i].cartId%>
+                                            </button>
+                                        </td>
+                                        <td><%=orders[i].status %></td>
+                                        <td>
+                                            <button type="button" class="updateOrder btn btn-warning" data-toggle="modal" data-target="#updateOrderStatus" id="<%=orders[i].orderId %>">
+                                                Update Status
+                                            </button>
+                                        </td>
+                                        <td><%=orders[i].seller %></td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="updateOrderStatus" tabindex="-1" role="dialog" aria-labelledby="updateOrderStatus" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 class="modal-title">Update order status</h2>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="updateOrderStatusForm" class="px-5">
+                                <div data-mdb-input-init class="form-outline form-white mb-4">
+                                    <input type="text" id="updateOrderId" class="form-control form-control-lg" name="orderId" placeholder="OrderId" disabled />
+                                </div>
+                                <div data-mdb-input-init class="form-outline form-white mb-4">
+                                    <select class="form-select w-100" aria-label="Default select example" name="orderStatus" id="updatedOrderStatus" style="height:44px;">
+                                        <option selected>Open this update status</option>
+                                        <option value="Order Placed">Order Placed</option>
+                                        <option value="Order Confirmed">Order Confirmed</option>
+                                        <option value="Order Packaging">Order Packaging</option>
+                                        <option value="Order Dispatch">Order Dispatch</option>
+                                        <option value="Order Delivered">Order Delivered</option>
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                            <button type="submit" id="update_status" class="btn btn-primary">Update</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="showCart" tabindex="-1" role="dialog" aria-labelledby="showCart" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 class="modal-title" id="cartModalHeader"></h2>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="cartModalBody"></div>
+                            <div id="cartModalPrice"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
